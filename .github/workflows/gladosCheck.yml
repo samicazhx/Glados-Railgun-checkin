@@ -8,18 +8,36 @@ on:
       - 'README.md'
       - 'imgs/**'
   schedule:
-    - cron: '18 9,12 * * *'
+    - cron: '17 19 * * *'      # 北京时间 19:17 触发
       timezone: 'Asia/Shanghai'
 
 jobs:
   build:
     name: glados/railgun checkin
     runs-on: ubuntu-latest
-      
+
     permissions:
       contents: read
       actions: write
 
+    steps:
+      # ===== 新增：仅定时触发时随机延迟 =====
+      - name: 随机延迟（避开整点/半点）
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          DELAY=$(( (RANDOM * 32768 + RANDOM) % 5700 ))
+          TARGET=$(( $(date +%s) + DELAY ))
+          MIN=$(TZ=Asia/Shanghai date -d @$TARGET +%M)
+          if [ "$MIN" = "00" ] || [ "$MIN" = "30" ]; then
+            DELAY=$(( DELAY + 60 + RANDOM % 240 ))
+          fi
+          echo "将延迟 ${DELAY} 秒（约 $((DELAY / 60)) 分钟）"
+          echo "预计执行时间：$(TZ=Asia/Shanghai date -d @$(( $(date +%s) + DELAY )))"
+          sleep $DELAY
+
+      # ===== 下面是你原有的步骤，原样放这里 =====
+      - uses: actions/checkout@v4
+      
     strategy:
       matrix:
         python-version: [3.13]
