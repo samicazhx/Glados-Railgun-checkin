@@ -24,6 +24,9 @@ jobs:
       contents: read
       actions: write
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: 随机延迟（仅定时触发，避开整点/半点）
         if: ${{ github.event_name == 'schedule' }}
@@ -37,52 +40,21 @@ jobs:
           echo "预计执行：$(TZ=Asia/Shanghai date -d "@$(( $(date +%s) + DELAY ))")"
           sleep "$DELAY"
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v6
 
-      # ===== 把你原来 steps: 下面除延迟外的步骤粘贴到这里 =====
-      # 注意：不要再写第二个 "steps:"，每一项以 "- " 开头，与上面的步骤同列缩进
-      # 例如：
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.x'
-      #
-      # - name: checkin
-      #   env:
-      #     GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
-      #   run: python glados.py
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
 
-      # 在这里接上你原来的签到步骤
-      # - name: checkin
-      #   run: python checkin.py
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+          pip install pypushdeer
 
-      # ===== 下面是你原有的步骤，原样放这里 =====
-      - uses: actions/checkout@v4
-      
-    strategy:
-      matrix:
-        python-version: [3.13]
-
-    # 这里加入全局环境变量，强制后续所有第三方 actions 兼容 Node.js 24 运行环境
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v6
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    # 安装 python 库
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
-        pip install pypushdeer
+      # ↓↓↓ 从这里开始，粘贴你原文件第 85 行之后的步骤 ↓↓↓
 
     # 执行 签到脚本
     - name: Running checkin
