@@ -8,10 +8,10 @@ on:
       - 'README.md'
       - 'imgs/**'
   schedule:
-    - cron: '17 11 * * *'   # UTC 11:17 = 北京时间 19:17
+    - cron: '17 11 * * *'      # UTC 11:17 = 北京时间 19:17
 
 concurrency:
-  group: checkin
+  group: glados-checkin
   cancel-in-progress: false
 
 jobs:
@@ -19,6 +19,7 @@ jobs:
     name: glados/railgun checkin
     runs-on: ubuntu-latest
     timeout-minutes: 120
+
     permissions:
       contents: read
       actions: write
@@ -36,7 +37,21 @@ jobs:
           echo "预计执行：$(TZ=Asia/Shanghai date -d "@$(( $(date +%s) + DELAY ))")"
           sleep "$DELAY"
 
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ===== 把你原来 steps: 下面除延迟外的步骤粘贴到这里 =====
+      # 注意：不要再写第二个 "steps:"，每一项以 "- " 开头，与上面的步骤同列缩进
+      # 例如：
+      # - name: Setup Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.x'
+      #
+      # - name: checkin
+      #   env:
+      #     GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+      #   run: python glados.py
 
       # 在这里接上你原来的签到步骤
       # - name: checkin
