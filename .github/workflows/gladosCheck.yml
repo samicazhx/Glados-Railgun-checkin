@@ -1,4 +1,4 @@
-name: glados-railgun-checkin
+name: auto check
 
 on:
   workflow_dispatch:
@@ -8,54 +8,41 @@ on:
       - 'README.md'
       - 'imgs/**'
   schedule:
-    - cron: '17 11 * * *'      # UTC 11:17 = 北京时间 19:17
-
-concurrency:
-  group: glados-checkin
-  cancel-in-progress: false
+    - cron: '18 9,12 * * *'
+      timezone: 'Asia/Shanghai'
 
 jobs:
   build:
     name: glados/railgun checkin
     runs-on: ubuntu-latest
-    timeout-minutes: 120
-
+      
     permissions:
       contents: read
       actions: write
 
+    strategy:
+      matrix:
+        python-version: [3.13]
+
+    # 这里加入全局环境变量，强制后续所有第三方 actions 兼容 Node.js 24 运行环境
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: 随机延迟（仅定时触发，避开整点/半点）
-        if: ${{ github.event_name == 'schedule' }}
-        run: |
-          DELAY=$(( RANDOM % 3600 ))
-          MIN=$(TZ=Asia/Shanghai date -d "@$(( $(date +%s) + DELAY ))" +%M)
-          if [ "$MIN" = "00" ] || [ "$MIN" = "30" ]; then
-            DELAY=$(( DELAY + 60 + RANDOM % 240 ))
-          fi
-          echo "延迟 ${DELAY} 秒（约 $((DELAY / 60)) 分钟）"
-          echo "预计执行：$(TZ=Asia/Shanghai date -d "@$(( $(date +%s) + DELAY ))")"
-          sleep "$DELAY"
+    - name: Checkout Code
+      uses: actions/checkout@v6
 
-      - name: Checkout Code
-        uses: actions/checkout@v6
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.13'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-          pip install pypushdeer
-
-      # ↓↓↓ 从这里开始，粘贴你原文件第 85 行之后的步骤 ↓↓↓
-
+    # 安装 python 库
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+        pip install pypushdeer
     # 执行 签到脚本
     - name: Running checkin
       run: |
